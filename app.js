@@ -1,18 +1,17 @@
-const express = require('express');
-const { sql, poolPromise } = require('./config/db');
+const express = require("express");
+const { sql, poolPromise } = require("./config/db");
 
 const app = express();
 
 app.use(express.json());
 
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
     res.json({ mensagem: "API de produtos funcionando!" });
 });
 
 app.listen(3000, () => {
     console.log("Servidor executando na porta 3000");
 });
-
 app.post("/produtos", async (req, res) => {
     const { nome, preco, quantidade } = req.body;
 
@@ -20,7 +19,7 @@ app.post("/produtos", async (req, res) => {
         const pool = await poolPromise;
 
         const resultado = await pool.request()
-            .input("nome", sql.VarChar(100), nome)
+            .input("nome", sql.NVarChar(100), nome)
             .input("preco", sql.Decimal(10, 2), preco)
             .input("quantidade", sql.Int, quantidade)
             .query(`
@@ -33,7 +32,6 @@ app.post("/produtos", async (req, res) => {
             mensagem: "Produto cadastrado!",
             id: resultado.recordset[0].Id
         });
-
     } catch (erro) {
         console.error(erro);
         res.status(500).json({ erro: "Erro ao cadastrar produto" });
@@ -44,13 +42,12 @@ app.get("/produtos", async (req, res) => {
         const pool = await poolPromise;
 
         const resultado = await pool.request().query(`
-            SELECT Id, Nome, Preco, Quantidade 
-            FROM Produtos 
+            SELECT Id, Nome, Preco, Quantidade
+            FROM Produtos
             ORDER BY Id
         `);
 
         res.json(resultado.recordset);
-
     } catch (erro) {
         console.error(erro);
         res.status(500).json({ erro: "Erro ao consultar produtos" });
@@ -69,7 +66,7 @@ app.put("/produtos/:id", async (req, res) => {
 
         const resultado = await pool.request()
             .input("id", sql.Int, id)
-            .input("nome", sql.VarChar(100), nome)
+            .input("nome", sql.NVarChar(100), nome)
             .input("preco", sql.Decimal(10, 2), preco)
             .input("quantidade", sql.Int, quantidade)
             .query(`
@@ -85,7 +82,6 @@ app.put("/produtos/:id", async (req, res) => {
         }
 
         res.json({ mensagem: "Produto atualizado!" });
-
     } catch (erro) {
         console.error(erro);
         res.status(500).json({ erro: "Erro ao atualizar produto" });
@@ -93,6 +89,10 @@ app.put("/produtos/:id", async (req, res) => {
 });
 app.delete("/produtos/:id", async (req, res) => {
     const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ erro: "ID inválido" });
+    }
 
     try {
         const pool = await poolPromise;
@@ -106,7 +106,6 @@ app.delete("/produtos/:id", async (req, res) => {
         }
 
         res.json({ mensagem: "Produto excluído!" });
-
     } catch (erro) {
         console.error(erro);
         res.status(500).json({ erro: "Erro ao excluir produto" });
